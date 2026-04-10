@@ -1,15 +1,17 @@
 package main
 
 import (
-	"todoapp/scanner"
+	"fmt"
+	"todoapp/http"
 	"todoapp/todo"
 )
 
 func main() {
 	todoList := todo.NewList()
+	httpHandlers := http.NewHTTPHandlers(todoList)
+	httpServer := http.NewHTTPServer(httpHandlers)
 
-	scanner := scanner.NewScanner(todoList)
-
-	scanner.Start()
-
+	if err := httpServer.StartServer(); err != nil {
+		fmt.Println("failed to start HTTP server:", err)
+	}
 }

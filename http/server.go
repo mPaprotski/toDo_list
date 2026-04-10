@@ -1,0 +1,44 @@
+package http
+
+import (
+	"errors"
+	"net/http"
+
+	"github.com/gorilla/mux"
+)
+
+type HTTPServer struct {
+	httpHandlers *HTTPHandlers
+}
+
+func NewHTTPServer(httpHandler *HTTPHandlers) *HTTPServer {
+	return &HTTPServer{
+		httpHandlers: httpHandler,
+	}
+}
+
+func (s *HTTPServer) StartServer() error {
+	// TODO: Сервер можно модифицировать до http.Server с таймаутами, graceful
+	// shutdown и конфигурируемым портом вместо захардкоженного :9091.
+	router := mux.NewRouter()
+
+	// TODO: Сюда хорошо ложатся middleware для логирования, panic-recovery и
+	// трассировки запросов, если проект будет расти дальше.
+
+	router.Path("/tasks").Methods("POST").HandlerFunc(s.httpHandlers.HandlerCreateTask)
+	router.Path("/tasks/{title}").Methods("GET").HandlerFunc(s.httpHandlers.HandlerGetTask)
+	router.Path("/tasks").Methods("GET").Queries("completed", "true").HandlerFunc(s.httpHandlers.HandlerGetAllUncompletedTasks)
+	router.Path("/tasks").Methods("GET").HandlerFunc(s.httpHandlers.HandlerGetAllTasks)
+	router.Path("/tasks/{title}").Methods("PATCH").HandlerFunc(s.httpHandlers.HandlerCompleteTask)
+	router.Path("/tasks/{title}").Methods("DELETE").HandlerFunc(s.httpHandlers.HandlerDeleteTask)
+
+	if err := http.ListenAndServe(":9091", router); err != nil {
+		if errors.Is(err, http.ErrServerClosed) {
+			return nil
+		}
+
+		return err
+	}
+
+	return nil
+}

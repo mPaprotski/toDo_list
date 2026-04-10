@@ -6,12 +6,14 @@ import (
 )
 
 type Task struct {
-	Title  string
-	Text   string
-	IsDone bool
+	Title     string
+	Text      string
+	Completed bool
 
 	CreatedAt time.Time
-	DoneAt    *time.Time
+	// TODO: Поле можно переименовать в CompletedAt для более привычного
+	// английского нейминга и единообразия с Completed.
+	CompleteAt *time.Time
 }
 
 func NewTask(title, text string) Task {
@@ -19,19 +21,31 @@ func NewTask(title, text string) Task {
 		Title: title,
 		Text:  text,
 
-		IsDone:    false,
-		CreatedAt: time.Now(),
-		DoneAt:    nil,
+		Completed:  false,
+		CreatedAt:  time.Now(),
+		CompleteAt: nil,
 	}
 }
 
-func (t *Task) Done() {
-	if t.IsDone == true {
-		fmt.Println(taskAlreadyDone)
+func (t *Task) Complete() {
+	// TODO: Доменный слой лучше модифицировать так, чтобы он возвращал error,
+	// а не печатал в stdout: сейчас HTTP-слою трудно различать причины отказа.
+	if t.Completed == true {
+		fmt.Println(ErrTaskAlreadyExists)
 		return
 	}
-	t.IsDone = true
+	t.Completed = true
 
 	now := time.Now()
-	t.DoneAt = &now
+	t.CompleteAt = &now
+}
+
+func (t *Task) Uncomplete() {
+	if t.Completed == false {
+		fmt.Println(ErrTaskAlreadyExists)
+		return
+	}
+	t.Completed = false
+
+	t.CompleteAt = nil
 }
